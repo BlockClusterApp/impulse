@@ -1,0 +1,7 @@
+{
+  "name": "hydron",
+  "private": true,
+  "dependencies": {
+    "mongodb": "^3.0.5"
+  }
+}
