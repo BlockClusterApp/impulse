@@ -58,21 +58,41 @@ let alice_private_key_base64 = alice_wallet.getPrivateKey().toString("base64");
 let alice_compressed_public_key_hex = EthCrypto.publicKey.compress(alice_wallet.getPublicKey().toString("hex"))
 let alice_compressed_public_key_base64 = Buffer.from(EthCrypto.publicKey.compress(alice_wallet.getPublicKey().toString("hex")), 'hex').toString("base64")
 
-//cipher text may have quotes. So make sure to escape them
+let bob_wallet = Wallet.generate();
+let bob_private_key_hex = bob_wallet.getPrivateKey().toString("hex");
+let bob_private_key_base64 = bob_wallet.getPrivateKey().toString("base64");
+let bob_compressed_public_key_hex = EthCrypto.publicKey.compress(bob_wallet.getPublicKey().toString("hex"))
+let bob_compressed_public_key_base64 = Buffer.from(EthCrypto.publicKey.compress(bob_wallet.getPublicKey().toString("hex")), 'hex').toString("base64")
+
 exec(`python3.6 ./crypto-operations/encrypt.py ${alice_compressed_public_key_base64} 'Hello World!!!'`, (error, stdout, stderr) => {
     if(!error) {
         stdout = stdout.split(" ")
         let ciphertext = stdout[0].substr(2).slice(0, -1)
         let capsule = stdout[1].substr(2).slice(0, -2)
 
-        exec('python3.6 ./crypto-operations/decrypt.py ' + alice_private_key_base64 + " " + alice_compressed_public_key_base64 + " " + capsule + " " + ciphertext, (error, stdout, stderr) => {
+        exec('python3.6 ./crypto-operations/generate-re-encryptkey.py ' + alice_private_key_base64 + " " + bob_compressed_public_key_base64, (error, stdout, stderr) => {
             if(!error) {
-                console.log(stdout)
+                let kfrags = stdout
+
+                exec("python3.6 ./crypto-operations/decrypt-pre.py '" + kfrags + "' " + capsule + " " + ciphertext + " " + bob_private_key_base64 + " " + bob_compressed_public_key_base64 + " " + alice_compressed_public_key_base64, (error, stdout, stderr) => {
+                    if(!error) {
+                        console.log(stdout)
+
+                        exec('python3.6 ./crypto-operations/decrypt.py ' + alice_private_key_base64 + " " + alice_compressed_public_key_base64 + " " + capsule + " " + ciphertext, (error, stdout, stderr) => {
+                            if(!error) {
+                                console.log(stdout)
+                            } else {
+                                console.log(error)
+                            }
+                        })
+                    } else {
+                        console.log(error)
+                    }
+                })
             } else {
                 console.log(error)
             }
         })
-
     } else {
         console.log(error)
     }
