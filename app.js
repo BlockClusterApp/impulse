@@ -2,20 +2,16 @@ const express = require("express")
 const app = express()
 var bodyParser = require('body-parser')
 var MongoClient = require("mongodb").MongoClient;
-let exec = require("child_process").exec;
-var Wallet = require("ethereumjs-wallet");
-let EthCrypto = require("eth-crypto");
-let elliptic = require('elliptic');
 let sha3 = require('js-sha3');
 let ec = new elliptic.ec('secp256k1');
 var request = require("request")
 
-let mongoURL = process.env.mongoURL;
-let instanceId = process.env.instanceId || "test";
+let mongoURL = process.env.mongoURL || "mongodb://18.237.94.215:32153";
+let instanceId = process.env.instanceId;
 
 let db = null;
 
-MongoClient.connect("mongodb://18.237.94.215:32153", {reconnectTries : Number.MAX_VALUE, autoReconnect : true}, function(err, database) {
+MongoClient.connect(mongoURL, {reconnectTries : Number.MAX_VALUE, autoReconnect : true}, function(err, database) {
     if(!err) {
         db = database.db("admin");
     }
@@ -43,8 +39,6 @@ app.post("/writeObject", function (req, res) {
     obj.timestamp = Date.now();
     obj.instanceId = instanceId;
     obj.capsule = capsule;
-
-    console.log(pubKeyRecovered, publicKey)
 
     if(pubKeyRecovered === publicKey) {
         db.collection("encryptedObjects").insertOne(obj, function(err) {
@@ -120,6 +114,7 @@ app.post("/query", function(req, res) {
     let query = req.body.query;
     let signature = req.body.signature;
     let publicKey = req.body.publicKey;
+    let ownerPublicKey = req.body.ownerPublicKey;
 
     let query_hash = sha3.keccak256(JSON.stringify(query));
     let hexToDecimal = (x) => ec.keyFromPrivate(x, "hex").getPrivate().toString(10);
@@ -128,32 +123,20 @@ app.post("/query", function(req, res) {
     if(publicKey === pubKeyRecovered) {
         query.instanceId = instanceId;
 
-        db.collection("encryptedObjects").findOne(query, function(err, result) {
+        db.collection("derivationKeys").findOne({instanceId: instanceId, ownerPublicKey: ownerPublicKey, receiverPublicKey: pubKeyRecovered}, function(err, result) {
             if(!err && result) {
-                let ownerPublicKey = result.publicKey;
-                db.collection("derivationKeys").findOne({instanceId: instanceId, ownerPublicKey: ownerPublicKey, receiverPublicKey: pubKeyRecovered}, function(err, result) {
-                    if(!err && result) {
-                        query.publicKey = ownerPublicKey;
-                        db.collection("encryptedObjects").find(query, {instanceId: 0}).sort({timestamp: 1}).toArray(function(err, result) {
-                            if(!err) {
-                                res.send(JSON.stringify(result))
-                            } else {
-                                console.log("Error 1")
-                                res.send(JSON.stringify({"error": "An Unknown Error Occured"}))
-                            }
-                        })
+                query.publicKey = ownerPublicKey;
+                db.collection("encryptedObjects").find(query, {instanceId: 0}).sort({timestamp: 1}).toArray(function(err, result) {
+                    if(!err) {
+                        res.send(JSON.stringify(result))
                     } else {
-                        console.log("Error 2")
                         res.send(JSON.stringify({"error": "An Unknown Error Occured"}))
                     }
                 })
             } else {
-                console.log("Error 3")
                 res.send(JSON.stringify({"error": "An Unknown Error Occured"}))
             }
         })
-
-
     } else {
         res.send(JSON.stringify({"error": "Invalid Signature"}))
     }
@@ -260,8 +243,6 @@ setTimeout(() => {
                     capsule: capsule
                 }
             }, (error, result, body) => {
-                //console.log(body)
-
                 exec('python3.6 ./crypto-operations/generate-re-encryptkey.py ' + alice_private_key_base64 + " " + bob_compressed_public_key_base64, (error, stdout, stderr) => {
                     if(!error) {
                         let kfrags = stdout
@@ -277,8 +258,6 @@ setTimeout(() => {
                                 receiverPublicKey: bob_compressed_public_key_hex
                             }
                         }, (error, result, body) => {
-                            //console.log(body)
-
                             let query = {
                                 "metadata.assetName": "USD",
                                 "metadata.assetType": "Bulk"
@@ -292,7 +271,8 @@ setTimeout(() => {
                                 json: {
                                     query: query,
                                     signature: signature,
-                                    publicKey: bob_compressed_public_key_hex
+                                    publicKey: bob_compressed_public_key_hex,
+                                    ownerPublicKey: alice_compressed_public_key_hex
                                 }
                             }, (error, result, body) => {
                                 console.log(body)

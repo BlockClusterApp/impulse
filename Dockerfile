@@ -15,9 +15,9 @@ RUN mv node* node
 ENV PATH $PATH:/node/bin
 RUN apt-get install -y npm
 
-COPY package.json /hydron/
-WORKDIR /hydron
+RUN mkdir /impulse
+WORKDIR /impulse
+COPY . /impulse
 RUN npm --unsafe-perm install
-COPY . /hydron
 
 CMD ["node", "app.js"]

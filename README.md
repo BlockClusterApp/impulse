@@ -1,4 +1,4 @@
-# hydron
+# impulse
 
 ## Install in OS X
 
