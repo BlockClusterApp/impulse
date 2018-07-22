@@ -3,8 +3,8 @@ const app = express()
 var bodyParser = require('body-parser')
 var MongoClient = require("mongodb").MongoClient;
 let sha3 = require('js-sha3');
+let elliptic = require('elliptic');
 let ec = new elliptic.ec('secp256k1');
-var request = require("request")
 
 let mongoURL = process.env.mongoURL || "mongodb://18.237.94.215:32153";
 let instanceId = process.env.instanceId;
@@ -123,20 +123,33 @@ app.post("/query", function(req, res) {
     if(publicKey === pubKeyRecovered) {
         query.instanceId = instanceId;
 
-        db.collection("derivationKeys").findOne({instanceId: instanceId, ownerPublicKey: ownerPublicKey, receiverPublicKey: pubKeyRecovered}, function(err, result) {
-            if(!err && result) {
-                query.publicKey = ownerPublicKey;
-                db.collection("encryptedObjects").find(query, {instanceId: 0}).sort({timestamp: 1}).toArray(function(err, result) {
-                    if(!err) {
-                        res.send(JSON.stringify(result))
-                    } else {
-                        res.send(JSON.stringify({"error": "An Unknown Error Occured"}))
-                    }
-                })
-            } else {
-                res.send(JSON.stringify({"error": "An Unknown Error Occured"}))
-            }
-        })
+        if(ownerPublicKey === publicKey) {
+            query.publicKey = ownerPublicKey;
+            db.collection("encryptedObjects").find(query, {instanceId: 0}).sort({timestamp: 1}).toArray(function(err, result) {
+                if(!err) {
+                    res.send(JSON.stringify(result))
+                } else {
+                    res.send(JSON.stringify({"error": "An Unknown Error Occured"}))
+                }
+            })
+        } else {
+            db.collection("derivationKeys").findOne({instanceId: instanceId, ownerPublicKey: ownerPublicKey, receiverPublicKey: pubKeyRecovered}, function(err, result) {
+                if(!err && result) {
+                    query.publicKey = ownerPublicKey;
+                    db.collection("encryptedObjects").find(query, {instanceId: 0}).sort({timestamp: 1}).toArray(function(err, result) {
+                        if(!err) {
+                            res.send(JSON.stringify(result))
+                        } else {
+                            res.send(JSON.stringify({"error": "An Unknown Error Occured"}))
+                        }
+                    })
+                } else {
+                    res.send(JSON.stringify({"error": "An Unknown Error Occured"}))
+                }
+            })
+        }
+
+
     } else {
         res.send(JSON.stringify({"error": "Invalid Signature"}))
     }
@@ -205,7 +218,6 @@ exec(`python3.6 ./crypto-operations/encrypt.py ${alice_compressed_public_key_bas
     }
 })
 */
-
 /*
 let alice_wallet = Wallet.generate();
 let alice_private_key_hex = alice_wallet.getPrivateKey().toString("hex");
@@ -220,7 +232,8 @@ let bob_compressed_public_key_hex = EthCrypto.publicKey.compress(bob_wallet.getP
 let bob_compressed_public_key_base64 = Buffer.from(EthCrypto.publicKey.compress(bob_wallet.getPublicKey().toString("hex")), 'hex').toString("base64")
 
 setTimeout(() => {
-    exec(`python3.6 ./crypto-operations/encrypt.py ${alice_compressed_public_key_base64} 'Hello World!!!'`, (error, stdout, stderr) => {
+    let encodedPlainText = base64.encode("Hello World!!!");
+    exec(`python3.6 ./crypto-operations/encrypt.py ${alice_compressed_public_key_base64} '${encodedPlainText}'`, (error, stdout, stderr) => {
         if(!error) {
             stdout = stdout.split(" ")
             let ciphertext = stdout[0].substr(2).slice(0, -1)
