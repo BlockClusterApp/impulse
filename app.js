@@ -14,6 +14,8 @@ let db = null;
 MongoClient.connect(mongoURL, {reconnectTries : Number.MAX_VALUE, autoReconnect : true}, function(err, database) {
     if(!err) {
         db = database.db("admin");
+
+        db.collection("networks").updateOne({instanceId: instanceId}, { $set: {impulseStatus: "running"}}, function(err, res) {});
     }
 })
 
@@ -127,7 +129,7 @@ app.post("/query", function(req, res) {
             query.publicKey = ownerPublicKey;
             db.collection("encryptedObjects").find(query, {instanceId: 0}).sort({timestamp: 1}).toArray(function(err, result) {
                 if(!err) {
-                    res.send(JSON.stringify(result))
+                    res.send(JSON.stringify({queryResult: result}))
                 } else {
                     res.send(JSON.stringify({"error": "An Unknown Error Occured"}))
                 }
@@ -135,10 +137,11 @@ app.post("/query", function(req, res) {
         } else {
             db.collection("derivationKeys").findOne({instanceId: instanceId, ownerPublicKey: ownerPublicKey, receiverPublicKey: pubKeyRecovered}, function(err, result) {
                 if(!err && result) {
+                    let derivationKey = result.reEncryptionKey;
                     query.publicKey = ownerPublicKey;
                     db.collection("encryptedObjects").find(query, {instanceId: 0}).sort({timestamp: 1}).toArray(function(err, result) {
                         if(!err) {
-                            res.send(JSON.stringify(result))
+                            res.send(JSON.stringify({derivationKey: derivationKey, queryResult: result}))
                         } else {
                             res.send(JSON.stringify({"error": "An Unknown Error Occured"}))
                         }
@@ -155,7 +158,7 @@ app.post("/query", function(req, res) {
     }
 })
 
-app.listen(7558, () => console.log("Hydron is running!!!"))
+app.listen(7558, () => console.log("Impulse is running!!!"))
 
 /*
 let exec = require("child_process").exec;
