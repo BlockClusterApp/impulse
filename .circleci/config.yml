@@ -28,6 +28,8 @@ references:
       branches:
         only:
           - master
+          - staging
+          - test
           - dev
 
 jobs:
