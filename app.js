@@ -6,7 +6,7 @@ let sha3 = require('js-sha3');
 let elliptic = require('elliptic');
 let ec = new elliptic.ec('secp256k1');
 
-let mongoURL = process.env.mongoURL || process.env.MONGO_URL || "mongodb://18.237.94.215:32153";
+let mongoURL = "mongodb://localhost:27017";
 let instanceId = process.env.instanceId;
 
 let db = null;
