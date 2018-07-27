@@ -12,6 +12,10 @@ let remoteMongoURL = process.env.MONGO_URL || "mongo.default.svc.cluster.local:2
 
 let db = null;
 
+process.on('uncaughtException', function (error) {
+   console.log(error);
+});
+
 MongoClient.connect(mongoURL, {reconnectTries : Number.MAX_VALUE, autoReconnect : true}, function(err, database) {
     if(!err) {
         db = database.db("admin");
