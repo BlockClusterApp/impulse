@@ -21,7 +21,19 @@ MongoClient.connect(mongoURL, {reconnectTries : Number.MAX_VALUE, autoReconnect 
 MongoClient.connect(remoteMongoURL, {reconnectTries : Number.MAX_VALUE, autoReconnect : true}, function(err, database) {
     if(!err) {
         let tempDB = database.db("admin");
-        tempDB.collection("networks").updateOne({instanceId: instanceId}, { $set: {impulseStatus: "running"}}, function(err, res) {});
+        function reRun() {
+            tempDB.collection("networks").findOne({instanceId: instanceId}, function(err, node) {
+                if(!err && node) {
+                    if(node.impulseStatus == "initializing" || node.impulseStatus == "running") {
+                        tempDB.collection("networks").updateOne({instanceId: instanceId}, { $set: {impulseStatus: "running"}}, function(err, res) {});
+                    } else {
+                        setTimeout(reRun, 1000)
+                    }
+                }
+            })
+        }
+
+        reRun();
     }
 })
 
