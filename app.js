@@ -6,6 +6,8 @@ let sha3 = require('js-sha3');
 let elliptic = require('elliptic');
 let ec = new elliptic.ec('secp256k1');
 
+const Config = require('./config');
+
 let mongoURL = "mongodb://localhost:27017";
 let instanceId = process.env.instanceId;
 let remoteMongoURL = process.env.MONGO_URL || "mongo.default.svc.cluster.local:27017";
@@ -22,9 +24,9 @@ MongoClient.connect(mongoURL, {reconnectTries : Number.MAX_VALUE, autoReconnect 
     }
 })
 
-MongoClient.connect(remoteMongoURL, {reconnectTries : Number.MAX_VALUE, autoReconnect : true}, function(err, database) {
+MongoClient.connect(Config.getMongoConnectionString(), {reconnectTries : Number.MAX_VALUE, autoReconnect : true}, function(err, database) {
     if(!err) {
-        let tempDB = database.db("admin");
+        let tempDB = database.db(Config.getDatabase());
         function reRun() {
             tempDB.collection("networks").findOne({instanceId: instanceId}, function(err, node) {
                 if(!err && node) {
