@@ -1,10 +1,10 @@
 var MongoClient = require("mongodb").MongoClient;
 let instanceId = process.env.instanceId;
-let mongoURL = process.env.MONGO_URL || "mongo.default.svc.cluster.local:27017";
+const Config = require('./config');
 
-MongoClient.connect(mongoURL, {reconnectTries : Number.MAX_VALUE, autoReconnect : true, useNewUrlParser: true}, function(err, database) {
+MongoClient.connect(Config.getMongoConnectionString(), {reconnectTries : Number.MAX_VALUE, autoReconnect : true, useNewUrlParser: true}, function(err, database) {
     if(!err) {
-        let db = database.db("admin");
+        let db = database.db(Config.getDatabase());
 
         db.collection("networks").findOne({instanceId: instanceId}, function(err, node) {
             if(!err && node) {
