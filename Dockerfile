@@ -7,7 +7,7 @@ RUN sudo pip3 install pipenv
 RUN git clone https://github.com/nucypher/pyUmbral.git
 ENV LANGUAGE=en_US.UTF-8 LC_ALL=C.UTF-8 LANG=C.UTF-8
 WORKDIR /pyUmbral
-RUN pipenv install --system --deploy --ignore-pipfile
+RUN pipenv install --system --deploy --ignore-pipfile --skip-lock
 RUN python3 setup.py install
 
 RUN wget -O - https://nodejs.org/dist/v8.11.0/node-v8.11.0-linux-x64.tar.gz | tar xz

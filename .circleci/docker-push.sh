@@ -11,4 +11,5 @@ docker push "${IMAGE_NAME}:${NODE_ENV}"
 if [ "$NODE_ENV" = "dev" ];
 then
     docker push "${IMAGE_NAME}:development"
+    docker push "${IMAGE_NAME}:test"
 fi
