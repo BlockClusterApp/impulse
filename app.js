@@ -138,6 +138,10 @@ app.post("/deleteKey", function (req, res) {
 
 app.post("/query", function(req, res) {
     let query = req.body.query;
+    let limit = req.body.limit || 50;
+    let skip = req.body.skip || 0;
+    let sort = req.body.sort || {timestamp: 1};
+
     let signature = req.body.signature;
     let publicKey = req.body.publicKey;
     let ownerPublicKey = req.body.ownerPublicKey;
@@ -151,7 +155,7 @@ app.post("/query", function(req, res) {
 
         if(ownerPublicKey === publicKey) {
             query.publicKey = ownerPublicKey;
-            db.collection("encryptedObjects").find(query, {instanceId: 0}).sort({timestamp: 1}).toArray(function(err, result) {
+            db.collection("encryptedObjects").find(query, {instanceId: 0}).sort(sort).skip(skip).limit(limit).toArray(function(err, result) {
                 if(!err) {
                     res.send(JSON.stringify({queryResult: result}))
                 } else {
@@ -163,7 +167,7 @@ app.post("/query", function(req, res) {
                 if(!err && result) {
                     let derivationKey = result.reEncryptionKey;
                     query.publicKey = ownerPublicKey;
-                    db.collection("encryptedObjects").find(query, {instanceId: 0}).sort({timestamp: 1}).toArray(function(err, result) {
+                    db.collection("encryptedObjects").find(query, {instanceId: 0}).sort(sort).skip(skip).limit(limit).toArray(function(err, result) {
                         if(!err) {
                             res.send(JSON.stringify({derivationKey: derivationKey, queryResult: result}))
                         } else {
