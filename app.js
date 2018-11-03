@@ -6,6 +6,7 @@ let sha3 = require('js-sha3');
 let elliptic = require('elliptic');
 let ec = new elliptic.ec('secp256k1');
 let smartContracts = require("./smart-contracts/index.js");
+var Web3 = require("web3");
 
 const Config = require('./config');
 
