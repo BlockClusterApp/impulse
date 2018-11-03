@@ -88,6 +88,31 @@ async function verifyToken(token) {
   })
 }
 
+async function getImpulseContractAddress(token) {
+  return new Promise((resolve, reject) => {
+    MongoClient.connect(Config.getMongoConnectionString(), {
+      reconnectTries: Number.MAX_VALUE,
+      autoReconnect: true
+    }, (err, database) => {
+      if (!err) {
+        let tempDB = database.db(Config.getDatabase());
+
+        tempDB.collection("networks").findOne({
+          instanceId: instanceId
+        }, (err, node) => {
+          if(err || node == null) {
+            reject()
+          } else {
+            resolve(node.impulseContractAddress)
+          }
+        })
+      } else {
+        reject()
+      }
+    })
+  })
+}
+
 function generateSecret() {
   var ALPHABET = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890';
   var ID_LENGTH = 8;
@@ -103,7 +128,7 @@ app.post("/register", async (req, res) => {
   let random = req.body.random;
   let web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
   var impulseContract = web3.eth.contract(smartContracts.impulse.abi);
-  var impulse = impulseContract.at(network.impulseContractAddress);
+  var impulse = impulseContract.at(await getImpulseContractAddress());
 
   if (impulse.isVerified.call(random) === true) {
     console.log(1)
