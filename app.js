@@ -105,16 +105,19 @@ app.post("/register", async (req, res) => {
   var impulse = impulseContract.at(network.impulseContractAddress);
 
   if (impulse.isVerified.call(random) === true) {
+    console.log(1)
     impulse.verified.sendTransaction(random, {
       from: web3.eth.accounts[0],
       gas: '99999999999999999'
     }, async (err) => {
       if (!err) {
+        console.log(2)
         let secret = generateSecret();
         await insertToken(secret);
         res.send(JSON.stringify({
           "message": secret
         }))
+        console.log(3)
       } else {
         res.send(JSON.stringify({
           "error": "An internal error occured"
