@@ -64,6 +64,11 @@ jobs:
       - run:
           name: 'Uploading to all regions'
           command: ./.circleci/upload-to-multi-region.sh
+
+  notify_update:
+    <<: *container_config
+    steps:
+      - *restore_repo
       - run:
           name: 'Network Update'
           command: ./.circleci/build-end-notification.sh
@@ -85,4 +90,11 @@ workflows:
           <<: *deploy_tag_filters
           requires:
             - docker_push
+          context: aws-creds
+
+      - notify_update:
+          <<: *deploy_tag_filters
+          type: approval
+          requires:
+            - multi_region
           context: aws-creds
