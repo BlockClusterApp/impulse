@@ -59,6 +59,8 @@ jobs:
     <<: *aws_container
     steps:
       - *restore_repo
+      - setup_remote_docker:
+          version: 17.11.0-ce
       - run:
           name: 'Uploading to all regions'
           command: ./.circleci/upload-to-multi-region.sh
